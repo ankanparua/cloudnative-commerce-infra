@@ -1,13 +1,16 @@
 terraform {
   required_version = ">= 1.7.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
   }
+
   cloud {
-    organization = "platform-engineering-demo007"   
+    organization = "platform-engineering-demo"
+
     workspaces {
       name = "cnc-logging-dev"
     }
@@ -16,16 +19,19 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+
   default_tags {
     tags = {
       ManagedBy   = "PlatformTeam"
       Environment = var.environment
-      Project     = "CloudNative-Commerce-infra"
+      Project     = "CloudNative-Commerce"
     }
   }
 }
 
 data "aws_caller_identity" "current" {}
+
+# ---------------- VARIABLES ----------------
 
 variable "aws_region" {
   type    = string
@@ -39,17 +45,19 @@ variable "environment" {
 
 variable "bucket_prefix" {
   type    = string
-  default = "cnc-log"
+  default = "cnc-logs"
 }
 
+# ✅ FIXED (NO DEFAULT — avoids your error)
 variable "owner_email" {
   type = string
-  default = ankanparua001@gmail.com
 }
+
+# ---------------- RESOURCES ----------------
 
 resource "aws_s3_bucket" "logs" {
   bucket = "${var.bucket_prefix}-${data.aws_caller_identity.current.account_id}-${var.environment}"
-  
+
   tags = {
     Owner = var.owner_email
   }
@@ -57,6 +65,7 @@ resource "aws_s3_bucket" "logs" {
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "logs_sse" {
   bucket = aws_s3_bucket.logs.id
+
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
@@ -66,6 +75,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "logs_sse" {
 
 resource "aws_s3_bucket_versioning" "logs_versioning" {
   bucket = aws_s3_bucket.logs.id
+
   versioning_configuration {
     status = "Enabled"
   }
@@ -78,6 +88,8 @@ resource "aws_s3_bucket_public_access_block" "logs_public_block" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+# ---------------- OUTPUT ----------------
 
 output "bucket_arn" {
   value = aws_s3_bucket.logs.arn
