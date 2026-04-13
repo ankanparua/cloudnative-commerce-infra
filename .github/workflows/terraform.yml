@@ -1,17 +1,11 @@
-name: "Platform Self-Service Pipeline"
+name: "Terraform Pipeline"
 
 on:
-  pull_request:
-    branches: ["main"]
   push:
     branches: ["main"]
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
-  validate-and-provision:
+  terraform:
     runs-on: ubuntu-latest
 
     defaults:
@@ -24,22 +18,19 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.7.0
-
-      # 🔥 REQUIRED for Terraform Cloud
-      - name: Terraform Login
-        run: echo "${{ secrets.TF_API_TOKEN }}" | terraform login -token-only
 
       - name: Terraform Init
         run: terraform init -input=false
 
-      - name: Terraform Plan (PR)
-        if: github.event_name == 'pull_request'
+      - name: Terraform Plan
         run: terraform plan -input=false
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          TF_VAR_owner_email: "ankanparua001@gmail.com"
 
-      - name: Terraform Apply (Merge)
-        if: github.event_name == 'push'
+      - name: Terraform Apply
         run: terraform apply -input=false -auto-approve
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
