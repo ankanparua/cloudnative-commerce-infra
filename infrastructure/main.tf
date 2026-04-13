@@ -9,7 +9,7 @@ terraform {
   }
 
   cloud {
-    organization = "platform-engineering-demo"
+    organization = "platform-engineering-demo007"
 
     workspaces {
       name = "cnc-logging-dev"
@@ -48,7 +48,6 @@ variable "bucket_prefix" {
   default = "cnc-logs"
 }
 
-# ✅ FIXED (NO DEFAULT — avoids your error)
 variable "owner_email" {
   type = string
 }

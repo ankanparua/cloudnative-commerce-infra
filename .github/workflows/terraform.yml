@@ -13,23 +13,30 @@ permissions:
 jobs:
   validate-and-provision:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ./infrastructure
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.0
 
+      # 🔥 REQUIRED for Terraform Cloud
+      - name: Terraform Login
+        run: echo "${{ secrets.TF_API_TOKEN }}" | terraform login -token-only
+
       - name: Terraform Init
         run: terraform init -input=false
 
       - name: Terraform Plan (PR)
         if: github.event_name == 'pull_request'
-        run: terraform plan -input=false -detailed-exitcode
+        run: terraform plan -input=false
 
       - name: Terraform Apply (Merge)
         if: github.event_name == 'push'
@@ -38,4 +45,4 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
-
+          TF_VAR_owner_email: "ankanparua001@gmail.com"
