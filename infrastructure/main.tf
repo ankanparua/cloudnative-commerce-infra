@@ -7,14 +7,6 @@ terraform {
       version = "~> 5.0"
     }
   }
-
-  cloud {
-    organization = "platform-engineering-demo007"
-
-    workspaces {
-      name = "cnc-logging-dev"
-    }
-  }
 }
 
 provider "aws" {
