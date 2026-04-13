@@ -6,12 +6,8 @@ on:
   push:
     branches: ["main"]
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
-  validate-and-provision:
+  terraform:
     runs-on: ubuntu-latest
 
     defaults:
@@ -19,38 +15,17 @@ jobs:
         working-directory: ./infrastructure
 
     steps:
-      # 📦 Checkout code
+      # Checkout
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ⚙️ Setup Terraform
+      # Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.0
 
-      # 🔐 DEBUG (remove later if you want)
-      - name: Debug TFC Token
-        run: |
-          if [ -z "${{ secrets.TFC_API_TOKEN }}" ]; then
-            echo "❌ TOKEN NOT FOUND"
-            exit 1
-          else
-            echo "✅ TOKEN FOUND"
-          fi
-
-      # 🔑 Configure Terraform Cloud Token (CRITICAL STEP)
-      - name: Configure Terraform Cloud Token
-        run: |
-          mkdir -p $HOME/.terraform.d
-          echo "{\"credentials\":{\"app.terraform.io\":{\"token\":\"${{ secrets.TFC_API_TOKEN }}\"}}}" > $HOME/.terraform.d/credentials.tfrc.json
-
-      # 👀 Verify credentials file (debug)
-      - name: Show credentials file
-        run: |
-          cat $HOME/.terraform.d/credentials.tfrc.json
-
-      # ☁️ Configure AWS credentials
+      # Configure AWS
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -58,16 +33,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # 🚀 Terraform Init
+      # Terraform Init
       - name: Terraform Init
         run: terraform init -input=false
 
-      # 📊 Terraform Plan (PR only)
-      - name: Terraform Plan (PR)
-        if: github.event_name == 'pull_request'
-        run: terraform plan -input=false -detailed-exitcode
+      # Terraform Plan
+      - name: Terraform Plan
+        run: terraform plan -input=false
+        env:
+          TF_VAR_owner_email: "ankanparua001@gmail.com"
 
-      # 🚀 Terraform Apply (on push to main)
-      - name: Terraform Apply (Merge)
+      # Terraform Apply (only on push)
+      - name: Terraform Apply
         if: github.event_name == 'push'
         run: terraform apply -input=false -auto-approve
+        env:
+          TF_VAR_owner_email: "ankanparua001@gmail.com"
